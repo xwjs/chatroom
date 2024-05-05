@@ -6,6 +6,9 @@
 #include <string>
 #include <cstring>
 
+namespace xx
+{
+
 class Message
 {
 public:
@@ -37,6 +40,8 @@ private:
     {
         return std::get<T>(data);
     }
+};
+
 };
 
 #endif

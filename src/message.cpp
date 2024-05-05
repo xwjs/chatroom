@@ -10,53 +10,53 @@ static bool null_str(const char * s)
     return (strcmp(s,"") == 0) || (s == nullptr);
 }
 
-Message::Message(const std::string  & text):type(Type::Text),data(text)
+xx::Message::Message(const std::string  & text):type(xx::Message::Type::Text),data(text)
 {
-    if(null_str(text)) type = Type::Null;
+    if(null_str(text)) type = xx::Message::Type::Null;
 }
-Message::Message(const char* text) : type(Type::Text), data(text) 
+xx::Message::Message(const char* text) : type(xx::Message::Type::Text), data(text) 
 {
-    if(null_str(text)) type = Type::Null;
-}
-
-Message::Message(const std::vector<char>& binary) : type(Type::Binary), data(binary) 
-{
-    if(!binary.size()) type = Type::Null;
+    if(null_str(text)) type = xx::Message::Type::Null;
 }
 
-Message::Type Message::get_type() const { return type; }
+xx::Message::Message(const std::vector<char>& binary) : type(xx::Message::Type::Binary), data(binary) 
+{
+    if(!binary.size()) type = xx::Message::Type::Null;
+}
 
-size_t Message::get_size() const 
+xx::Message::Type xx::Message::get_type() const { return type; }
+
+size_t xx::Message::get_size() const 
 { 
-    if(type == Type::Null) return 0;
+    if(type == xx::Message::Type::Null) return 0;
 
-    return (type == Type::Text) ? std::get<std::string>(data).size() : std::get<std::vector<char>>(data).size();
+    return (type == xx::Message::Type::Text) ? std::get<std::string>(data).size() : std::get<std::vector<char>>(data).size();
 }
 
-void Message::set_text(const std::string  & text)
+void xx::Message::set_text(const std::string  & text)
 {
-    type = (null_str(text))? Type::Null : Type::Text; 
+    type = (null_str(text))? xx::Message::Type::Null : xx::Message::Type::Text; 
     data = std::string(text); 
 }
 
-void Message::set_text(const char* text) 
+void xx::Message::set_text(const char* text) 
 {
-    type = (null_str(text))? Type::Null : Type::Text; 
+    type = (null_str(text))? xx::Message::Type::Null : xx::Message::Type::Text; 
     data = std::string(text); 
 }
 
-void Message::set_binary(const std::vector<char>& binary) 
+void xx::Message::set_binary(const std::vector<char>& binary) 
 { 
-    type = (binary.size() == 0) ? Type::Null:Type::Binary; 
+    type = (binary.size() == 0) ? xx::Message::Type::Null : xx::Message::Type::Binary; 
     data = binary; 
 }
 
-std::string Message::get_text() const 
+std::string xx::Message::get_text() const 
 {
-    return (type == Type::Text) ? std::get<std::string>(data) : ""; 
+    return (type == xx::Message::Type::Text) ? std::get<std::string>(data) : ""; 
 }
 
-std::vector<char> Message::get_binary() const 
+std::vector<char> xx::Message::get_binary() const 
 { 
-    return (type == Type::Binary) ? std::get<std::vector<char>>(data) : std::vector<char>(); 
+    return (type == xx::Message::Type::Binary) ? std::get<std::vector<char>>(data) : std::vector<char>(); 
 }
