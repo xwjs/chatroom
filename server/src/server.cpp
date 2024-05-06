@@ -1,5 +1,4 @@
 #include "../include/server.h"
-#include "server.h"
 
 int get_binded_socket(int port) {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -31,7 +30,6 @@ void set_nonblock(int fd)
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-
 int get_epoll(int serverSocket) {
     set_nonblock(serverSocket);
     int epollFd = epoll_create1(0);
@@ -41,7 +39,7 @@ int get_epoll(int serverSocket) {
     }
 
     epoll_event event;
-    event.events = EPOLLIN;
+    event.events = EPOLLIN | EPOLLET; // 从阻塞到非阻塞时，触发一次，而不是就绪一直触发
     event.data.fd = serverSocket;
 
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, serverSocket, &event) == -1) 
@@ -86,4 +84,39 @@ void set_client_epoll(int clifd, int epoll_fd)
     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, clifd, &event);
 }
 
-void cope_one_client(int clifd);
+void cope_one_client(int clifd)
+{
+    std::vector<char> buf(512);
+    std::string message;
+
+    while(true)
+    {
+        int re = recv(clifd,buf.data(),buf.size(),0);
+        if(re > 0)
+        {
+            message.append(buf.data(), re);
+        }
+        else if(0 == re) // client close connection
+        {
+            LOG(INFO) << "client close connection ip:" << get_client_ip(clifd);
+            close(clifd);
+            return ;
+        }
+        else if(re < 0)
+        {
+            // normal read end , cope message
+            if (errno == EWOULDBLOCK || errno == EAGAIN)
+            {
+                // TODO try catch
+                cope_message(message);
+            }
+            else // error end
+            {
+                LOG(ERROR) << "receive data error from ip:" << get_client_ip(clifd);
+            }
+
+            close(clifd);
+            return ;
+        }
+    }
+}

@@ -67,17 +67,16 @@ xx::Chatroom & xx::Chatroom::get_chatroom(size_t g_size)
 
         if(chatroom == nullptr)
         {
-            chatroom = new Chatroom();
-            LOG(INFO) << "create chatroom";
+            try
+            {
+                chatroom = new Chatroom();
+            }
+            catch(const std::exception& e)
+            {
+                LOG(FATAL) << "create ChatRoom fail check if system out of memory";
+            }
         }   
     }
-
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        xx::Chatroom::group_size = g_size;
-        LOG(INFO) << "change chatroom group size to " << xx::Chatroom::group_size;
-    }
-
     return *chatroom;
 }
 

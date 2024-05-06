@@ -6,7 +6,7 @@
 #include "../include/server.h"
 #include "../include/chatroom.h"
 
-#define MAX_BUFFER_SIZE 256
+xx::Chatroom * chatroom = & xx::Chatroom::get_chatroom();
 
 namespace po = boost::program_options;
 
@@ -71,26 +71,22 @@ int main(int argc,char * argv[])
     const int MAX_GROUPS = vm["groups"].as<int>();
     const int MAX_USERS = vm["users"].as<int>();
 
-    LOG(INFO) << "welcome to ChatRoom Copyright (C) 2024 xwj";
-    LOG(INFO) << "This program is licensed under the MIT License."; // TODO chagne license
-
-
-    LOG(INFO) << "max alive groups:" << MAX_GROUPS << " , " << "max alive users:" << MAX_USERS;
-    LOG(INFO) << "working with " << THREADS << " threads, 1 master " << THREADS -1 << "workers"; 
-
-    auto ser_sock = get_binded_socket(PORT);
-    auto epoll_fd = get_epoll(ser_sock);
-
-    LOG(INFO) << "listening in port:" << PORT;
-
     // TODO to promote performance , these should be dynamic
     const int MAX_EVENTS = 20;
     const int TIME_OUT = 50;
     struct epoll_event events[MAX_EVENTS];
 
-    xx::Chatroom * chatroom = & xx::Chatroom::get_chatroom();
+    LOG(INFO) << "welcome to ChatRoom Copyright (C) 2024 xwj";
+    LOG(INFO) << "This program is licensed under the MIT License."; // TODO chagne license
+
+    auto ser_sock = get_binded_socket(PORT);
+    auto epoll_fd = get_epoll(ser_sock);
 
     ThreadPool poll(THREADS);
+
+    LOG(INFO) << "max alive groups:" << MAX_GROUPS << " , " << "max alive users:" << MAX_USERS;
+    LOG(INFO) << "working with " << THREADS << " threads, 1 master " << THREADS -1 << "workers"; 
+    LOG(INFO) << "listening in port:" << PORT;
 
     while(true)
     {
@@ -102,7 +98,7 @@ int main(int argc,char * argv[])
             int fd = events[i].data.fd;
 
             // user connect server
-            if(fd = ser_sock)
+            if(fd == ser_sock)
             {
                 int cli = accept_client(ser_sock);
 
@@ -110,7 +106,7 @@ int main(int argc,char * argv[])
 
                 if(user_size > MAX_USERS) // more than MAX_USER, user connect fail
                 {
-                    LOG(ERROR) << "chatroom cant take more than " << MAX_USERS << " clients , drop this client";
+                    LOG(ERROR) << "chatroom cant take more than " << MAX_USERS << " clients , drop this client:" << get_client_ip(cli);
                     close(cli);
                 }
                 else // user connnect success
@@ -120,13 +116,14 @@ int main(int argc,char * argv[])
                     // set cli_sock not block, put int epoll to listen
                     set_client_epoll(cli,epoll_fd);
                 }
-
             }
 
             // create User , create Group and so on
             else
             {
-                
+                pool.enqueue([](int clifd) { 
+                    cope_one_client(clifd); 
+                }, fd);
             }
         }
     }
@@ -134,20 +131,3 @@ int main(int argc,char * argv[])
     google::ShutdownGoogleLogging();
     return 0;
 }
-/*  
-
-            if(fd == ser_sock)
-            {
-            }
-            else // cope message
-            {
-
-            }
-        }
-    }
-
-
-    google::ShutdownGoogleLogging();
-    return 0;
-}
-*/
