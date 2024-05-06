@@ -96,6 +96,16 @@ void xx::Chatroom::rm_chatroom()
     }
 }
 
+xx::User *xx::Chatroom::create_user(const char *uid)
+{
+    return nullptr;
+}
+
+xx::Group *xx::Chatroom::create_group(const char *gid, size_t group_size)
+{
+    return nullptr;
+}
+
 static std::string hash() 
 {
     auto now = std::chrono::system_clock::now();
@@ -116,17 +126,6 @@ static std::string hash()
     return hash_str;
 }
 
-xx::User * xx::Chatroom::create_user()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return new User(hash().c_str());
-}
-
-xx::Group * xx::Chatroom::create_group(size_t group_size)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return new Group(hash().c_str(),group_size);
-}
 
 void xx::Chatroom::add_user(User *u, Group *g)
 {

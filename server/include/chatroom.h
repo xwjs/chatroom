@@ -10,10 +10,9 @@
 #include <chrono>
 #include <functional>
 #include <sstream>
+#include <glog/logging.h>
+
 #include "message.h"
-#include "log.h"
-
-
 
 namespace xx
 {
@@ -36,7 +35,6 @@ namespace xx
         private:
             const char * uid;
 
-            // storage active groups
             std::unordered_map<const char * ,Group * > groups;
     };
 
@@ -65,17 +63,19 @@ namespace xx
             static Chatroom & get_chatroom(size_t group_size = 5);
             static void rm_chatroom();
 
-            User * create_user();
-            Group * create_group(size_t group_size=10);
+            User * create_user(const char * uid);
+            Group * create_group(const char * gid,size_t group_size=10);
+
+            void delete_user(User * u);
+            void delete_group(Group * g);
+
+            size_t user_size()const;
+            size_t group_size()const;
 
             void add_user(User * u,Group * g);
             void remove_user(User * u,Group *g);
 
-            void delete_user(User * u,Group * g);
-            void delete_group(Group * g);
-
             std::list<Group*> list_group(User * u)const ;
-
             std::list<User*>  list_user(Group * g)const;
         private:
             Chatroom();
@@ -88,8 +88,8 @@ namespace xx
             static std::mutex mutex_;
 
             static size_t group_size;
-            static std::set<Group*> groups;
-            static std::set<User*>  users;
+            static std::unordered_map<const char * ,Group * > groups;
+            static std::unordered_map<const char * ,User * > users;
     };
 };
 

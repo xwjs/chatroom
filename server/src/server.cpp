@@ -1,17 +1,15 @@
 #include "../include/server.h"
-
+#include "server.h"
 
 int get_binded_socket(int port) {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (serverSocket == -1) { LOG(FATAL) << "create server socket error";}
+    if (serverSocket == -1) { LOG(FATAL) << "create server socket error , check system if out of resource";}
 
     sockaddr_in serverAddr{};
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     serverAddr.sin_port = htons(port);
-
-    LOG(INFO) << "set tcp(v4)socket in port " << port << " accept from any ip";
 
     if (bind(serverSocket, reinterpret_cast<sockaddr*>(&serverAddr), sizeof(serverAddr)) == -1) 
     {
@@ -24,24 +22,22 @@ int get_binded_socket(int port) {
         LOG(FATAL) << "listen socket error";
     }
 
-    LOG(INFO) << "create socket success , socket_fd[" << serverSocket << "]";
     return serverSocket;
 }
 
-int set_nonblock(int fd)
+void set_nonblock(int fd)
 {
-    LOG(INFO) << "set nonblock fd[" << fd <<"]";
-    int old = fcntl(fd,F_GETFL);
-    int new_ = old | O_NONBLOCK;
-    fcntl(fd,F_SETFL,new_);
-    return old;
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
+
 int get_epoll(int serverSocket) {
+    set_nonblock(serverSocket);
     int epollFd = epoll_create1(0);
     if (epollFd == -1) 
     {
-        LOG(FATAL) << "create epoll error";
+        LOG(FATAL) << "create epoll error , check system if out of resource";
     }
 
     epoll_event event;
@@ -55,7 +51,6 @@ int get_epoll(int serverSocket) {
         LOG(FATAL) << "bind socket to epoll error";
     }
 
-    LOG(INFO) << "bind socket to epoll success ,epoll_fd[" << epollFd << "]";
     return epollFd;
 }
 
@@ -65,7 +60,6 @@ char * get_client_ip(int clientSocketFD) {
 
     if (getpeername(clientSocketFD, (struct sockaddr *)&clientAddr, &clientAddrLen) == -1) 
     {
-        LOG(ERROR) << "get client ip error ,client_fd[" << clientSocketFD << "]";
         return "";    
     }
 
@@ -75,3 +69,21 @@ char * get_client_ip(int clientSocketFD) {
     return clientIP;
 }
 
+int accept_client(int ser_fd)
+{
+    sockaddr_in clientAddr;
+    socklen_t clientAddrLen = sizeof(clientAddr);
+    int cli = accept(ser_fd, (sockaddr*)&clientAddr, &clientAddrLen);
+    return cli;
+}
+
+void set_client_epoll(int clifd, int epoll_fd)
+{
+    set_nonblock(clifd);
+    epoll_event event;
+    event.events = EPOLLIN;
+    event.data.fd = clifd;
+    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, clifd, &event);
+}
+
+void cope_one_client(int clifd);
